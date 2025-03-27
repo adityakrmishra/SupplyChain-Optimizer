@@ -1,0 +1,38 @@
+# Core
+fastapi==0.103.2
+uvicorn[standard]==0.23.2
+python-dotenv==1.0.0
+
+# Forecasting
+prophet==1.1.5
+tensorflow==2.13.0
+torch==2.0.1
+sktime==0.21.0
+
+# Geospatial
+geopandas==0.13.2
+osmnx==1.7.0
+folium==0.14.0
+geoalchemy2==0.14.0
+shapely==2.0.1
+
+# Blockchain
+web3==6.11.1
+hyperledger-fabric-sdk-py==1.0.0
+
+# ML Ops
+mlflow==2.8.1
+dvc==3.32.0
+
+# NLP
+transformers==4.34.1
+nltk==3.8.1
+
+# Database
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23
+
+# Utilities
+kafka-python==2.0.2
+requests==2.31.0
+python-dateutil==2.8.2
