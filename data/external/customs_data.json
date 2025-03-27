@@ -1,0 +1,53 @@
+# data_scripts/download_customs_data.py
+import json
+from pathlib import Path
+import logging
+import requests
+from datetime import datetime
+
+DATA_PATH = Path("../../data/external/customs_data.json")
+
+logger = logging.getLogger(__name__)
+
+def fetch_customs_data(
+    api_endpoint: str = "https://api.customs.gov/trade-records",
+    start_date: str = "2023-01-01",
+    end_date: str = "2023-12-31"
+) -> dict:
+    """
+    Retrieve customs trade records with data validation
+    """
+    params = {
+        "start": start_date,
+        "end": end_date,
+        "format": "json"
+    }
+    
+    try:
+        response = requests.get(api_endpoint, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Validate response structure
+        if not all(k in data for k in ["metadata", "results"]):
+            raise ValueError("Invalid API response structure")
+            
+        return data
+    
+    except (requests.exceptions.RequestException, ValueError) as e:
+        logger.error(f"Customs data fetch failed: {str(e)}")
+        return {}
+
+def save_customs_data(data: dict) -> None:
+    """Save customs data with timestamp metadata"""
+    if data:
+        data["metadata"]["retrieved_at"] = datetime.utcnow().isoformat()
+        with open(DATA_PATH, "w") as f:
+            json.dump(data, f, indent=2)
+        logger.info(f"Saved customs data to {DATA_PATH}")
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+    data = fetch_customs_data()
+    save_customs_data(data)
