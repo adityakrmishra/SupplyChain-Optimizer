@@ -1,0 +1,40 @@
+# data_scripts/engineer_features.py
+import pandas as pd
+from pathlib import Path
+import logging
+from sklearn.preprocessing import PolynomialFeatures
+
+NORM_PATH = Path("../../data/processed/normalized_demand.csv")
+FEATURE_PATH = Path("../../data/processed/feature_engineered.ftr")
+
+logger = logging.getLogger(__name__)
+
+def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Create advanced features for modeling"""
+    # Lag features
+    df['prev_week_demand'] = df['weight'].shift(7)
+    
+    # Rolling statistics
+    df['7d_avg_demand'] = df['weight'].rolling(7).mean()
+    
+    # Interaction terms
+    poly = PolynomialFeatures(degree=2, interaction_only=True)
+    interactions = poly.fit_transform(df[['unit_price', 'weight']])
+    df[['price_weight_interaction']] = interactions[:, -1:]
+    
+    # Time since last shipment
+    df['time_since_last'] = df['shipment_date'].diff().dt.days
+    
+    return df.dropna()
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    
+    try:
+        norm_df = pd.read_csv(NORM_PATH)
+        feature_df = engineer_features(norm_df)
+        feature_df.to_feather(FEATURE_PATH)
+        logger.info(f"Saved engineered features to {FEATURE_PATH}")
+        
+    except Exception as e:
+        logger.error(f"Feature engineering failed: {str(e)}")
