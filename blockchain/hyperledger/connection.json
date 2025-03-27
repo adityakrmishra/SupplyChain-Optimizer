@@ -1,0 +1,477 @@
+{
+  "name": "global-supplychain-network",
+  "version": "2.4.1",
+  "description": "Enterprise supply chain network with 6 organizations across manufacturing, logistics, and retail",
+  "client": {
+    "organization": "ManufacturerOrg",
+    "cryptoconfig": {
+      "path": "/fabric/crypto-config",
+      "allowSelfSigned": true
+    },
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": 4500,
+          "eventHub": 6000,
+          "eventReg": 6000
+        },
+        "orderer": 3000,
+        "grpc": {
+          "maxSendMessageLength": 100,
+          "maxReceiveMessageLength": 200
+        }
+      },
+      "tlsSettings": {
+        "hostnameOverride": "supplychain-tls-gateway",
+        "trustServerCertificate": true,
+        "clientKeyFile": "/keys/tls-client.key",
+        "clientCertFile": "/keys/tls-client.crt"
+      }
+    },
+    "credentialStore": {
+      "path": "/wallets",
+      "cryptoStore": {
+        "path": "/tmp/crypto-store"
+      }
+    }
+  },
+  
+  "organizations": {
+    "ManufacturerOrg": {
+      "mspid": "ManufacturerOrgMSP",
+      "peers": [
+        "peer0.manufacturer.supplychain.com",
+        "peer1.manufacturer.supplychain.com",
+        "peer2.manufacturer.supplychain.com"
+      ],
+      "certificateAuthorities": [
+        "ca.manufacturer.supplychain.com",
+        "ca2.manufacturer.supplychain.com"
+      ],
+      "adminPrivateKey": {
+        "path": "/fabric/crypto-config/peerOrganizations/manufacturer.supplychain.com/users/Admin@manufacturer.supplychain.com/msp/keystore/priv_sk"
+      },
+      "signedCert": {
+        "path": "/fabric/crypto-config/peerOrganizations/manufacturer.supplychain.com/users/Admin@manufacturer.supplychain.com/msp/signcerts/Admin@manufacturer.supplychain.com-cert.pem"
+      },
+      "serviceDiscovery": {
+        "enabled": true,
+        "asLocalhost": false
+      }
+    },
+
+    "LogisticsOrg": {
+      "mspid": "LogisticsOrgMSP",
+      "peers": [
+        "peer0.logistics.supplychain.com",
+        "peer1.logistics.supplychain.com"
+      ],
+      "certificateAuthorities": ["ca.logistics.supplychain.com"],
+      "gatewayPeerEndpoints": [
+        {
+          "peer": "peer0.logistics.supplychain.com",
+          "tlsCACerts": {
+            "path": "/fabric/crypto-config/peerOrganizations/logistics.supplychain.com/tlsca/tlsca.logistics.supplychain.com-cert.pem"
+          }
+        }
+      ]
+    },
+
+    "RetailerOrg": {
+      "mspid": "RetailerOrgMSP",
+      "peers": ["peer0.retailer.supplychain.com"],
+      "certificateAuthorities": ["ca.retailer.supplychain.com"],
+      "ipWhiteList": ["192.168.1.0/24", "10.50.0.0/16"]
+    }
+  },
+
+  "peers": {
+    "peer0.manufacturer.supplychain.com": {
+      "url": "grpcs://peer0.manufacturer.supplychain.com:7051",
+      "tlsCACerts": {
+        "path": "/fabric/crypto-config/peerOrganizations/manufacturer.supplychain.com/tlsca/tlsca.manufacturer.supplychain.com-cert.pem"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.manufacturer.supplychain.com",
+        "request-timeout": 120000,
+        "keepalive-time": 60000
+      },
+      "chaincodeQuery": true,
+      "ledgerQuery": true,
+      "eventSource": true,
+      "nodeStatus": "active"
+    },
+
+    "peer0.logistics.supplychain.com": {
+      "url": "grpcs://peer0.logistics.supplychain.com:8051",
+      "tlsCACerts": {
+        "path": "/fabric/crypto-config/peerOrganizations/logistics.supplychain.com/tlsca/tlsca.logistics.supplychain.com-cert.pem"
+      },
+      "firewallRules": [
+        {
+          "name": "AsiaDataCenter",
+          "cidr": "10.100.20.0/24",
+          "action": "allow"
+        }
+      ]
+    }
+  },
+
+  "certificateAuthorities": {
+    "ca.manufacturer.supplychain.com": {
+      "url": "https://ca.manufacturer.supplychain.com:7054",
+      "caName": "ca-manufacturer",
+      "httpOptions": {
+        "verify": false,
+        "timeout": 30000
+      },
+      "registrar": [
+        {
+          "enrollId": "admin",
+          "enrollSecret": "adminpw"
+        }
+      ],
+      "tlsCACerts": {
+        "path": "/fabric/crypto-config/peerOrganizations/manufacturer.supplychain.com/ca/ca.manufacturer.supplychain.com-cert.pem"
+      }
+    }
+  },
+
+  "orderers": {
+    "orderer0.supplychain.com": {
+      "url": "grpcs://orderer0.supplychain.com:7050",
+      "grpcOptions": {
+        "grpc-max-send-message-length": 50,
+        "grpc.http2.keepalive_time": 300
+      },
+      "tlsCACerts": {
+        "path": "/fabric/crypto-config/ordererOrganizations/supplychain.com/tlsca/tlsca.supplychain.com-cert.pem"
+      }
+    }
+  },
+
+  "channels": {
+    "supplychain-channel": {
+      "orderers": ["orderer0.supplychain.com"],
+      "peers": {
+        "peer0.manufacturer.supplychain.com": {
+          "endorsingPeer": true,
+          "chaincodeQuery": true,
+          "ledgerQuery": true,
+          "eventSource": true
+        }
+      },
+      "policies": {
+        "endorsement": {
+          "identities": [
+            {"role": {"name": "member", "mspId": "ManufacturerOrgMSP"}},
+            {"role": {"name": "member", "mspId": "LogisticsOrgMSP"}}
+          ],
+          "policy": {
+            "2-of": [
+              {"signed-by": 0},
+              {"signed-by": 1}
+            ]
+          }
+        }
+      }
+    }
+  },
+
+  "chaincodes": [
+    {
+      "name": "supplychain-contract",
+      "version": "2.3",
+      "path": "/chaincode/supplychain",
+      "channel": "supplychain-channel",
+      "endorsementPolicy": {
+        "identities": 2,
+        "policy": "AND('ManufacturerOrgMSP.member','LogisticsOrgMSP.member')"
+      },
+      "privateData": {
+        "name": "sensitiveData",
+        "collectionConfig": [
+          {
+            "name": "tradeSecrets",
+            "policy": "OR('ManufacturerOrgMSP.member')",
+            "requiredPeerCount": 1,
+            "maxPeerCount": 3,
+            "blockToLive": 1000000
+          }
+        ]
+      }
+    }
+  ],
+
+  "logging": {
+    "level": "debug",
+    "formatter": "json",
+    "network": {
+      "peer": "info",
+      "orderer": "warning",
+      "ca": "error"
+    }
+  },
+
+  "gossip": {
+    "bootstrap": "peer0.manufacturer.supplychain.com:7051",
+    "useLeaderElection": true,
+    "orgLeader": false,
+    "externalEndpoint": "peer0.manufacturer.supplychain.com:7051"
+  },
+
+  "fabricVersion": "2.4.6",
+  "license": "Apache-2.0",
+  "commitHash": "a1b2c3d4e5f67890"
+}
+  },
+  "monitoring": {
+    "prometheus": {
+      "endpoint": "http://metrics.supplychain.com:9090",
+      "interval": "15s",
+      "peerMetrics": {
+        "cpu": true,
+        "memory": true,
+        "ledgerSize": true,
+        "transactionCount": true
+      }
+    },
+    "grafana": {
+      "dashboardUrl": "http://grafana.supplychain.com:3000/d/fabric-network",
+      "apiKey": "eyJrIjoiT0tTcG1pUlY2RnVKZTFVaDFsNFZXdE9ZWmNrMkZYbk4iLCJuIjoiU3VwcGx5Q2hhaW4iLCJpZCI6MX0="
+    }
+  },
+
+  "eventService": {
+    "type": "eventhub",
+    "peerOptions": {
+      "maxConnectAttempts": 5,
+      "reconnectTimeout": "10s",
+      "bufferSize": 100
+    },
+    "blockListener": {
+      "enabled": true,
+      "fullTransactionPayload": false,
+      "maxRetries": 3
+    }
+  },
+
+  "stateDatabase": {
+    "couchdb": {
+      "host": "couchdb0.manufacturer.supplychain.com",
+      "port": 5984,
+      "username": "admin",
+      "password": "adminpw",
+      "maxRetries": 5,
+      "maxRetriesOnStartup": 10,
+      "requestTimeout": "30s",
+      "indexes": {
+        "shipmentIndex": {
+          "fields": ["docType", "shipmentId", "status"],
+          "ddoc": "shipmentIndexDoc"
+        }
+      },
+      "queryLimit": 5000
+    }
+  },
+
+  "backupConfig": {
+    "strategy": "daily-incremental",
+    "schedule": "0 2 * * *",
+    "storage": {
+      "type": "s3",
+      "endpoint": "https://s3.supplychain-backups.com",
+      "bucket": "fabric-backups-prod",
+      "region": "us-east-1",
+      "retentionPolicy": {
+        "daily": 7,
+        "weekly": 4,
+        "monthly": 12
+      }
+    },
+    "disasterRecovery": {
+      "warmStandby": {
+        "location": "eu-central-1",
+        "activationTime": "15m"
+      }
+    }
+  },
+
+  "performance": {
+    "cache": {
+      "statedb": "500MB",
+      "historydb": "200MB",
+      "transientData": "100MB"
+    },
+    "concurrency": {
+      "blockProcessing": 10,
+      "transactionValidation": 20,
+      "chaincodeExecution": 15
+    },
+    "tuning": {
+      "golang": {
+        "GOMAXPROCS": 8,
+        "GODEBUG": "netdns=go"
+      },
+      "gRPC": {
+        "maxRecvMsgSize": "100MB",
+        "maxSendMsgSize": "100MB"
+      }
+    }
+  },
+
+  "security": {
+    "acl": {
+      "chaincodeInstall": {
+        "policyRef": "/Channel/Application/Admins"
+      },
+      "chaincodeCommit": {
+        "policyRef": "/Channel/Application/Writers"
+      }
+    },
+    "rbac": {
+      "enabled": true,
+      "roles": {
+        "supplychainAdmin": {
+          "permissions": ["CHANNEL_WRITE", "CONTRACT_DEPLOY"]
+        },
+        "auditor": {
+          "permissions": ["LEDGER_READ", "CONTRACT_QUERY"]
+        }
+      }
+    },
+    "tlsVersions": ["TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"],
+    "certificateRotation": {
+      "interval": "720h",
+      "warningThreshold": "24h"
+    }
+  },
+
+  "smartContractLifecycle": {
+    "installationPolicy": {
+      "approvalsRequired": 2,
+      "allowedOrgs": ["ManufacturerOrg", "LogisticsOrg"]
+    },
+    "upgradePolicy": {
+      "compatibilityCheck": true,
+      "downtimeWindow": "02:00-04:00 UTC",
+      "rollbackPlan": {
+        "timeout": "1h",
+        "validationPeriod": "30m"
+      }
+    }
+  },
+
+  "networkPolicies": {
+    "dataResidency": {
+      "regions": ["EU", "US"],
+      "compliance": "GDPR"
+    },
+    "dataReplication": {
+      "strategy": "async-commit",
+      "replicationFactor": 3,
+      "consistencyLevel": "quorum"
+    }
+  },
+
+  "chaincodePolicies": {
+    "validation": {
+      "plugin": "vscc",
+      "endorsement": {
+        "requireInit": false,
+        "timeout": "30s"
+      }
+    },
+    "logging": {
+      "shimLevel": "INFO",
+      "format": "json"
+    }
+  },
+
+  "gossipConfig": {
+    "maxBlockCountToStore": 100,
+    "pullInterval": "4s",
+    "pullPeerNum": 3,
+    "requestStateInfoInterval": "4s",
+    "publishStateInfoInterval": "4s",
+    "stateInfoRetentionInterval": "10m",
+    "publishCertPeriod": "10s",
+    "dialTimeout": "3s",
+    "connTimeout": "2s",
+    "externalEndpoint": "peer0-manufacturer:7051"
+  },
+
+  "serviceDiscovery": {
+    "enabled": true,
+    "authCacheEnabled": true,
+    "authCacheMaxSize": 1000,
+    "authCachePurgeRetentionRatio": 0.75,
+    "orgMembersAllowedAccess": false
+  },
+
+  "fileLedger": {
+    "location": "/var/hyperledger/production/ledgersData/chains",
+    "preallocateSpace": "2GB",
+    "blockValidation": {
+      "batchTimeout": "2s",
+      "maxMessageCount": 500,
+      "absoluteMaxBytes": "10MB",
+      "preferredMaxBytes": "2MB"
+    }
+  },
+
+  "kafkaOrderer": {
+    "brokers": ["kafka0:9092", "kafka1:9092", "kafka2:9092"],
+    "tls": {
+      "enabled": true,
+      "clientAuthRequired": false,
+      "certFile": "/etc/hyperledger/fabric/tls/server.crt",
+      "keyFile": "/etc/hyperledger/fabric/tls/server.key"
+    },
+    "retry": {
+      "shortInterval": "5s",
+      "shortTotal": "10m",
+      "longInterval": "5m",
+      "longTotal": "12h"
+    }
+  },
+
+  "identityManagement": {
+    "ldap": {
+      "enabled": true,
+      "url": "ldaps://ldap.supplychain.com:636",
+      "userFilter": "(&(objectClass=inetOrgPerson))",
+      "groupFilter": "(&(objectClass=groupOfUniqueNames))"
+    },
+    "mfa": {
+      "requiredForPeers": true,
+      "requiredForAdmins": true,
+      "providers": ["DUO", "GoogleAuthenticator"]
+    }
+  },
+
+  "maintenance": {
+    "dailyHealthCheck": "03:00 UTC",
+    "peerDrainTime": "30m",
+    "ordererRotation": {
+      "interval": "90d",
+      "gracePeriod": "7d"
+    }
+  },
+
+  "compliance": {
+    "auditTrail": {
+      "enabled": true,
+      "storage": {
+        "type": "elasticsearch",
+        "endpoint": "http://elastic.supplychain.com:9200",
+        "indexPattern": "fabric-audit-*"
+      }
+    },
+    "regulatory": {
+      "hipaa": true,
+      "pci-dss": false,
+      "sox": true
+    }
+  }
+}
