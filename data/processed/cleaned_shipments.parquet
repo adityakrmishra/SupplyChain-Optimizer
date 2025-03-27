@@ -1,0 +1,80 @@
+# data_scripts/process_shipments.py
+import pandas as pd
+import numpy as np
+from pathlib import Path
+import logging
+import json
+
+RAW_PATH = Path("../../data/external/customs_data.json")
+CLEAN_PATH = Path("../../data/processed/cleaned_shipments.parquet")
+META_PATH = Path("../../data/processed/processing_metadata.json")
+
+logger = logging.getLogger(__name__)
+
+def load_raw_data() -> pd.DataFrame:
+    """Load and validate raw shipment data"""
+    try:
+        with open(RAW_PATH) as f:
+            data = json.load(f)
+        
+        if 'results' not in data:
+            raise ValueError("Invalid data structure")
+            
+        return pd.DataFrame(data['results'])
+    
+    except Exception as e:
+        logger.error(f"Data loading failed: {str(e)}")
+        raise
+
+def clean_shipments(df: pd.DataFrame) -> pd.DataFrame:
+    """Main cleaning pipeline"""
+    # Handle missing values
+    df = df.replace('N/A', np.nan)
+    df['weight'] = df['weight'].fillna(df['weight'].median())
+    
+    # Convert data types
+    df['shipment_date'] = pd.to_datetime(df['shipment_date'])
+    df['customs_status'] = df['customs_status'].astype('category')
+    
+    # Add calculated columns
+    df['transit_time'] = df['delivery_date'] - df['shipment_date']
+    df['transit_time'] = df['transit_time'].dt.days
+    
+    # Remove outliers
+    df = df[(df['weight'] > 0) & (df['weight'] < 10000)]
+    
+    # Validate output
+    assert df['shipment_id'].is_unique, "Duplicate shipment IDs found"
+    return df
+
+def update_metadata(step: str, params: dict) -> None:
+    """Update processing metadata"""
+    meta = {}
+    if META_PATH.exists():
+        meta = json.loads(META_PATH.read_text())
+    
+    meta[step] = {
+        "timestamp": pd.Timestamp.now().isoformat(),
+        "parameters": params,
+        "input_version": json.loads(RAW_PATH.read_text())['metadata']['version']
+    }
+    
+    META_PATH.write_text(json.dumps(meta, indent=2))
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    CLEAN_PATH.parent.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        raw_df = load_raw_data()
+        clean_df = clean_shipments(raw_df)
+        clean_df.to_parquet(CLEAN_PATH)
+        logger.info(f"Saved cleaned data to {CLEAN_PATH}")
+        
+        update_metadata(
+            step="shipment_cleaning",
+            params={"outlier_threshold": 10000}
+        )
+        
+    except Exception as e:
+        logger.error(f"Processing failed: {str(e)}")
