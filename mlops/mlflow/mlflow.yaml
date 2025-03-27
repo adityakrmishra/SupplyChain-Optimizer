@@ -1,0 +1,7 @@
+backend_store_uri: postgresql://mlflow:password@localhost:5432/mlflowdb
+default_artifact_root: s3://supplychain-ml-artifacts
+servers:
+  - name: main
+    host: 0.0.0.0
+    port: 5000
+    workers: 4
