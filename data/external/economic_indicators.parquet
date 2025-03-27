@@ -1,0 +1,55 @@
+# data_scripts/download_economic_indicators.py
+from pathlib import Path
+import logging
+import pandas as pd
+from pandas_datareader import wb
+
+DATA_PATH = Path("../../data/external/economic_indicators.parquet")
+
+INDICATORS = {
+    "NY.GDP.MKTP.CD": "gdp",
+    "NE.EXP.GNFS.CD": "exports",
+    "NE.IMP.GNFS.CD": "imports",
+    "FP.CPI.TOTL": "cpi"
+}
+
+COUNTRIES = ["USA", "CHN", "IND", "DEU", "JPN"]
+
+logger = logging.getLogger(__name__)
+
+def download_wb_data(
+    start_year: int = 2018,
+    end_year: int = 2023
+) -> pd.DataFrame:
+    """
+    Download World Bank economic indicators with error handling
+    """
+    try:
+        logger.info(f"Fetching World Bank data for {len(COUNTRIES)} countries")
+        df = wb.download(
+            indicator=list(INDICATORS.keys()),
+            country=COUNTRIES,
+            start=start_year,
+            end=end_year
+        )
+        
+        df = df.reset_index()
+        df["indicator"] = df["indicator"].map(INDICATORS)
+        df = df.pivot_table(
+            index=["country", "year"],
+            columns="indicator",
+            values="value"
+        ).reset_index()
+        
+        df.to_parquet(DATA_PATH)
+        logger.info(f"Saved economic indicators to {DATA_PATH}")
+        return df
+        
+    except Exception as e:
+        logger.error(f"World Bank data download failed: {str(e)}")
+        raise
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+    download_wb_data()
