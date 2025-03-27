@@ -1,0 +1,12 @@
+[core]
+remote = gcs
+analytics = false
+
+['remote "gcs"']
+url = gs://supplychain-ml-data
+projectname = supplychain-optimizer
+credentialpath = /secrets/gcs-credentials.json
+
+[cache]
+type = gcs
+protected = true
