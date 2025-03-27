@@ -1,0 +1,32 @@
+# data_scripts/update_metadata.py
+from pathlib import Path
+import json
+import pandas as pd
+
+META_PATH = Path("../../data/processed/processing_metadata.json")
+
+def generate_lineage() -> dict:
+    """Generate data lineage information"""
+    return {
+        "datasets": {
+            "shipments": {
+                "source": "customs_data.json",
+                "version": pd.read_json(RAW_PATH)['metadata']['version']
+            },
+            "weather": {
+                "source": "NOAA API",
+                "collection_date": pd.Timestamp.now().strftime("%Y-%m-%d")
+            }
+        },
+        "pipeline_version": "1.2.0",
+        "processing_steps": [
+            "cleaning",
+            "normalization",
+            "feature_engineering",
+            "data_integration"
+        ]
+    }
+
+if __name__ == "__main__":
+    lineage = generate_lineage()
+    META_PATH.write_text(json.dumps(lineage, indent=2))
