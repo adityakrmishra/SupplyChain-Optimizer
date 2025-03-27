@@ -1,0 +1,12 @@
+{
+    "model_v1": {
+        "mae": 14.2,
+        "rmse": 18.7,
+        "last_updated": "2023-11-15"
+    },
+    "model_v2": {
+        "mae": 12.8,
+        "rmse": 16.4,
+        "last_updated": "2023-11-20"
+    }
+}
