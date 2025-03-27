@@ -1,0 +1,8 @@
+# Ignore large binary files
+*.bin
+*.pkl
+*.h5
+*.joblib
+
+# Exclude local temp files
+tmp/
