@@ -1,0 +1,98 @@
+# forecasting/prophet_pipeline.py
+from pathlib import Path
+import json
+import logging
+import pandas as pd
+from prophet import Prophet
+from prophet.diagnostics import cross_validation, performance_metrics
+
+DATA_PATH = Path("../../data/processed/merged_dataset.parquet")
+FORECAST_PATH = Path("../../forecasts/prophet/2023-11-demand_v1.3.csv")
+METRICS_PATH = Path("../../forecasts/prophet/evaluation_metrics.json")
+
+logger = logging.getLogger(__name__)
+
+def prepare_prophet_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Format data for Prophet model"""
+    return (
+        df.resample('D', on='shipment_date')
+        .agg({'weight': 'sum'})
+        .reset_index()
+        .rename(columns={'shipment_date': 'ds', 'weight': 'y'})
+    )
+
+def train_prophet_model(df: pd.DataFrame) -> Prophet:
+    """Train Prophet model with custom seasonality"""
+    model = Prophet(
+        yearly_seasonality=True,
+        weekly_seasonality=True,
+        daily_seasonality=False,
+        changepoint_prior_scale=0.05
+    )
+    
+    # Add custom regressors
+    if 'temperature' in df.columns:
+        model.add_regressor('temperature')
+        
+    model.add_seasonality(
+        name='monthly', 
+        period=30.5, 
+        fourier_order=5
+    )
+    
+    model.fit(df)
+    return model
+
+def evaluate_model(model: Prophet, df: pd.DataFrame) -> dict:
+    """Calculate evaluation metrics"""
+    df_cv = cross_validation(
+        model,
+        initial='90 days',
+        period='30 days',
+        horizon='60 days'
+    )
+    
+    metrics = performance_metrics(df_cv)
+    return {
+        'mae': metrics['mae'].mean(),
+        'rmse': metrics['rmse'].mean(),
+        'mape': metrics['mape'].mean()
+    }
+
+def generate_forecasts(model: Prophet, periods: int = 30) -> pd.DataFrame:
+    """Generate future predictions"""
+    future = model.make_future_dataframe(
+        periods=periods, 
+        include_history=False
+    )
+    
+    if 'temperature' in model.train_component_cols:
+        future['temperature'] = future['ds'].dt.month * 2 + 10  # Mock temp data
+        
+    forecast = model.predict(future)
+    return forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    FORECAST_PATH.parent.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        # Load and prepare data
+        merged_df = pd.read_parquet(DATA_PATH)
+        prophet_df = prepare_prophet_data(merged_df)
+        
+        # Train model
+        model = train_prophet_model(prophet_df)
+        
+        # Evaluate and save metrics
+        metrics = evaluate_model(model, prophet_df)
+        METRICS_PATH.write_text(json.dumps(metrics, indent=2))
+        
+        # Generate forecasts
+        forecast = generate_forecasts(model)
+        forecast.to_csv(FORECAST_PATH, index=False)
+        
+        logger.info(f"Saved Prophet forecasts to {FORECAST_PATH}")
+
+    except Exception as e:
+        logger.error(f"Prophet pipeline failed: {str(e)}")
