@@ -105,16 +105,16 @@ POSTGIS_DB_URL=postgresql://user:pass@localhost:5432/supplychain
    model = Prophet()
    model.fit(df)  # df with 'ds' (date) and 'y' (metric)
    forecast = model.predict(future)
-  ```
+   ```
 
-3. Optimize Routes
+2. Optimize Routes
    ```bash
    from route_optimizer import RouteOptimizer
    optimizer = RouteOptimizer(api_key="osrm_key")
    route = optimizer.find_optimal_route(waypoints=["NYC", "LA"])
    ```
 
-4. Start Blockchain Node
+3. Start Blockchain Node
    ```bash
    cd blockchain
    hyperledger-fabric start
