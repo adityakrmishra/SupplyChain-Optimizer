@@ -1,0 +1,85 @@
+{
+    "_comment": "Global model configuration for supply chain forecasting",
+    "environment": {
+        "debug_mode": false,
+        "data_version": "v2.3.1",
+        "retrain_interval_hours": 72
+    },
+
+    "prophet": {
+        "core_params": {
+            "growth": "logistic",
+            "changepoint_prior_scale": 0.15,
+            "seasonality_mode": "multiplicative",
+            "yearly_seasonality": 12,
+            "weekly_seasonality": 6,
+            "holidays_prior_scale": 0.25
+        },
+        "uncertainty": {
+            "interval_width": 0.95,
+            "mcmc_samples": 200
+        },
+        "custom_seasonality": [
+            {
+                "name": "quarterly",
+                "period": 91.25,
+                "fourier_order": 8
+            }
+        ]
+    },
+
+    "lstm": {
+        "architecture": {
+            "sequence_length": 28,
+            "input_features": ["demand", "inventory", "lead_time"],
+            "hidden_units": [64, 32],
+            "dropout_rate": 0.3,
+            "output_activation": "relu"
+        },
+        "training": {
+            "batch_size": 64,
+            "epochs": 200,
+            "early_stopping_patience": 15,
+            "learning_rate": 0.001,
+            "loss_function": "huber",
+            "metrics": ["mae", "mse"]
+        },
+        "normalization": {
+            "scaler": "minmax",
+            "feature_range": [0, 1]
+        }
+    },
+
+    "ensemble": {
+        "model_weights": {
+            "prophet": 0.4,
+            "lstm": 0.6
+        },
+        "uncertainty_combination": "monte_carlo"
+    },
+
+    "evaluation": {
+        "test_size": 0.2,
+        "cv_folds": 5,
+        "metrics_thresholds": {
+            "mae": 15.0,
+            "rmse": 20.0,
+            "mape": 10.0
+        }
+    },
+
+    "feature_engineering": {
+        "lag_features": {
+            "demand_lags": [7, 14, 21],
+            "price_lags": [3, 6, 9]
+        },
+        "rolling_features": {
+            "demand_rolling_mean": 7,
+            "inventory_rolling_std": 14
+        },
+        "external_features": [
+            "holiday_flag",
+            "weather_disruption_score"
+        ]
+    }
+}
