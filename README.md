@@ -143,6 +143,71 @@ NOAA and OpenStreetMap for geospatial data.
 PyTorch and TensorFlow communities.
 Hyperledger Fabric documentation.
 
+# Project File Structure 📂
+```
+SupplyChain-Optimizer/
+├── 📁 .github/ # GitHub workflows
+│ └── 📁 workflows/
+│ └── 🔧 ci-cd.yml # CI/CD pipeline
+├── 📁 blockchain/ # Blockchain integration
+│ ├── 📁 hyperledger/ # Hyperledger Fabric config
+│ ├── 📁 smart_contracts/ # Solidity contracts
+│ └── 🔧 web3_integration.py # Supplier contract interactions
+├── 📁 config/ # Configuration files
+│ ├── 🔧 logging_config.yaml
+│ └── 🔧 model_params.json
+├── 📁 data/ # Datasets and geo-data
+│ ├── 📁 external/ # NOAA/OSM raw data
+│ ├── 📁 processed/ # Cleaned data for ML
+│ └── 📁 forecasts/ # Prophet/LSTM outputs
+├── 📁 docs/ # Documentation
+│ ├── 📘 architecture.md # System design
+│ └── 📘 api_reference.md # FastAPI endpoints
+├── 📁 mlops/ # ML Operations
+│ ├── 📁 dvc/ # Data versioning
+│ └── 📁 mlflow/ # Experiment tracking
+├── 📁 notebooks/ # Jupyter explorations
+│ ├── 🔧 disruption_analysis.ipynb
+│ └── 🔧 route_optimization.ipynb
+├── 📁 src/ # Core source code
+│ ├── 📁 forecasting/ # Time-series models
+│ │ ├── 🔧 prophet_model.py
+│ │ └── 🔧 lstm_model.py
+│ ├── 📁 geospatial/ # Map analytics
+│ │ ├── 🔧 folium_maps.py
+│ │ └── 🔧 osmnx_utils.py
+│ ├── 📁 route_optimizer/ # Logistics engine
+│ │ ├── 🔧 carbon_footprint.py
+│ │ └── 🔧 graphhopper_api.py
+│ └── 📁 api/ # FastAPI backend
+│ ├── 🔧 main.py
+│ └── 📁 models/ # Pydantic schemas
+├── 📁 tests/ # Unit/integration tests
+│ ├── 🔧 test_forecasting.py
+│ └── 🔧 test_blockchain.py
+├── 📁 utils/ # Helper scripts
+│ ├── 🔧 data_loader.py
+│ └── 🔧 geo_helpers.py
+├── 📄 .env.example # Env template
+├── 📄 docker-compose.yml # Kafka/PostGIS containers
+├── 📄 requirements.txt # Python dependencies
+├── 📄 LICENSE
+└── 📄 README.md # You are here! 😊
+```
+
+
+## Key Structural Notes 🔑
+1. **Modular Design**: Components split into forecasting/blockchain/geospatial for clarity
+2. **MLOps Ready**: Built-in support for MLflow (experiments) and DVC (data pipelines)
+3. **Containerized Services**: Docker setup for PostGIS (spatial DB) and Kafka (streaming)
+4. **API-First**: FastAPI backend with Swagger docs auto-generation
+5. **Reproducibility**: All raw data versioned via DVC, not Git
+
+To clone and explore:
+```bash
+git clone https://github.com/adityakrmishra/SupplyChain-Optimizer.git
+tree -L 3 SupplyChain-Optimizer  # Visualize structure
+```
 
 ---
 
