@@ -1,0 +1,103 @@
+# forecasting/lstm_pipeline.py
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from pathlib import Path
+import logging
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+
+DATA_PATH = Path("../../data/processed/normalized_demand.csv")
+MODEL_PATH = Path("../../forecasts/lstm/model_weights.h5")
+FORECAST_PATH = Path("../../forecasts/lstm/2023-11-demand_seq2seq.parquet")
+
+logger = logging.getLogger(__name__)
+
+class LSTMForecaster:
+    """LSTM-based demand forecasting model"""
+    
+    def __init__(self, lookback=30, forecast_horizon=7):
+        self.lookback = lookback
+        self.forecast_horizon = forecast_horizon
+        self.scaler = MinMaxScaler()
+        self.model = self.build_model()
+
+    def build_model(self) -> Sequential:
+        """Build seq2seq LSTM architecture"""
+        model = Sequential([
+            LSTM(128, input_shape=(self.lookback, 1), 
+            Dropout(0.3),
+            Dense(64, activation='relu'),
+            Dense(self.forecast_horizon)
+        ])
+        model.compile(optimizer='adam', loss='mse')
+        return model
+
+    def prepare_data(self, series: pd.Series) -> tuple:
+        """Create time series sequences"""
+        scaled = self.scaler.fit_transform(series.values.reshape(-1,1))
+        X, y = [], []
+        
+        for i in range(len(scaled) - self.lookback - self.forecast_horizon):
+            X.append(scaled[i:i+self.lookback])
+            y.append(scaled[i+self.lookback:i+self.lookback+self.forecast_horizon])
+            
+        return np.array(X), np.array(y)
+
+    def train(self, X: np.ndarray, y: np.ndarray, epochs=50) -> None:
+        """Train model with early stopping"""
+        callback = tf.keras.callbacks.EarlyStopping(
+            monitor='val_loss', 
+            patience=5,
+            restore_best_weights=True
+        )
+        
+        self.model.fit(
+            X, y,
+            epochs=epochs,
+            validation_split=0.2,
+            callbacks=[callback],
+            verbose=1
+        )
+
+    def forecast(self, X: np.ndarray) -> pd.DataFrame:
+        """Generate multi-step forecasts"""
+        predictions = self.model.predict(X)
+        predictions = self.scaler.inverse_transform(predictions)
+        
+        dates = pd.date_range(
+            start=pd.Timestamp.now() + pd.DateOffset(days=1),
+            periods=self.forecast_horizon
+        )
+        
+        return pd.DataFrame({
+            'date': dates,
+            'predicted_demand': predictions[-1]
+        })
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        # Load data
+        df = pd.read_csv(DATA_PATH)
+        series = df.set_index('shipment_date')['weight']
+        
+        # Prepare model
+        forecaster = LSTMForecaster()
+        X, y = forecaster.prepare_data(series)
+        
+        # Train and save
+        forecaster.train(X, y)
+        forecaster.model.save_weights(MODEL_PATH)
+        
+        # Generate forecasts
+        forecast = forecaster.forecast(X[-1:])
+        forecast.to_parquet(FORECAST_PATH, index=False)
+        
+        logger.info(f"Saved LSTM forecasts to {FORECAST_PATH}")
+
+    except Exception as e:
+        logger.error(f"LSTM pipeline failed: {str(e)}")
