@@ -1,0 +1,14 @@
+{
+    "test_csv": {
+        "type": "csv",
+        "path": "tests/test_data/sample.csv",
+        "schema": "test_schema"
+    },
+    "schemas": {
+        "test_schema": {
+            "required_columns": ["date", "value"],
+            "date_column": "date",
+            "numeric_columns": ["value"]
+        }
+    }
+}
