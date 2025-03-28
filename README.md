@@ -145,54 +145,78 @@ Hyperledger Fabric documentation.
 
 # Project File Structure 📂
 ```
-SupplyChain-Optimizer/
-├── 📁 .github/ # GitHub workflows
-│ └── 📁 workflows/
-│ └── 🔧 ci-cd.yml # CI/CD pipeline
-├── 📁 blockchain/ # Blockchain integration
-│ ├── 📁 hyperledger/ # Hyperledger Fabric config
-│ ├── 📁 smart_contracts/ # Solidity contracts
-│ └── 🔧 web3_integration.py # Supplier contract interactions
-├── 📁 config/ # Configuration files
-│ ├── 🔧 logging_config.yaml
-│ └── 🔧 model_params.json
-├── 📁 data/ # Datasets and geo-data
-│ ├── 📁 external/ # NOAA/OSM raw data
-│ ├── 📁 processed/ # Cleaned data for ML
-│ └── 📁 forecasts/ # Prophet/LSTM outputs
-├── 📁 docs/ # Documentation
-│ ├── 📘 architecture.md # System design
-│ └── 📘 api_reference.md # FastAPI endpoints
-├── 📁 mlops/ # ML Operations
-│ ├── 📁 dvc/ # Data versioning
-│ └── 📁 mlflow/ # Experiment tracking
-├── 📁 notebooks/ # Jupyter explorations
-│ ├── 🔧 disruption_analysis.ipynb
-│ └── 🔧 route_optimization.ipynb
-├── 📁 src/ # Core source code
-│ ├── 📁 forecasting/ # Time-series models
-│ │ ├── 🔧 prophet_model.py
-│ │ └── 🔧 lstm_model.py
-│ ├── 📁 geospatial/ # Map analytics
-│ │ ├── 🔧 folium_maps.py
-│ │ └── 🔧 osmnx_utils.py
-│ ├── 📁 route_optimizer/ # Logistics engine
-│ │ ├── 🔧 carbon_footprint.py
-│ │ └── 🔧 graphhopper_api.py
-│ └── 📁 api/ # FastAPI backend
-│ ├── 🔧 main.py
-│ └── 📁 models/ # Pydantic schemas
-├── 📁 tests/ # Unit/integration tests
-│ ├── 🔧 test_forecasting.py
-│ └── 🔧 test_blockchain.py
-├── 📁 utils/ # Helper scripts
-│ ├── 🔧 data_loader.py
-│ └── 🔧 geo_helpers.py
-├── 📄 .env.example # Env template
-├── 📄 docker-compose.yml # Kafka/PostGIS containers
-├── 📄 requirements.txt # Python dependencies
-├── 📄 LICENSE
-└── 📄 README.md # You are here! 😊
+supplychain-optimizer/
+├── .github/                   # GitHub Actions
+│   └── workflows/
+│       ├── ci-cd.yml          # CI/CD Pipeline
+│       └── codeql-analysis.yml
+│
+├── src/                       # Source Code
+│   ├── api/                   # FastAPI
+│   │   ├── endpoints/         # API Routes
+│   │   ├── models/            # Pydantic Schemas
+│   │   └── main.py            # API Entrypoint
+│   │
+│   ├── blockchain/            # Blockchain Integration
+│   │   ├── contracts/         # Smart Contracts
+│   │   ├── integrations/      # Web3 Providers
+│   │   └── utils/             # Blockchain Helpers
+│   │
+│   ├── forecasting/           # ML Models
+│   │   ├── models/            # Prophet/LSTM
+│   │   └── pipelines/         # Data Pipelines
+│   │
+│   ├── geospatial/            # Mapping
+│   │   ├── visualization/     # Folium/Plotly
+│   │   └── analysis/          # OSMnx Tools
+│   │
+│   ├── route_optimizer/       # Logistics Engine
+│   │   ├── algorithms/        # Optimization Logic
+│   │   └── carbon/            # Emission Calculators
+│   │
+│   └── utils/                 # Shared Utilities
+│       ├── data/              # Data Loaders
+│       ├── geo/               # Geospatial Helpers
+│       └── logging/           # Log Configs
+│
+├── tests/                     # Test Suite
+│   ├── unit/                  # Isolated Tests
+│   ├── integration/           # System Tests
+│   └── e2e/                   # End-to-End Tests
+│
+├── infrastructure/            # Deployment
+│   ├── docker/                # Container Configs
+│   ├── terraform/             # Cloud Provisioning
+│   └── kubernetes/            # K8s Manifests
+│
+├── data/                      # Data Management
+│   ├── raw/                   # Original Data
+│   ├── processed/             # Cleaned Data
+│   └── forecasts/             # Model Outputs
+│
+├── docs/                      # Documentation
+│   ├── architecture/          # System Design
+│   ├── api/                   # API References
+│   └── user_guides/           # Tutorials
+│
+├── notebooks/                 # Jupyter
+│   ├── exploration/           # EDA Notebooks
+│   └── research/              # Experimental Code
+│
+├── config/                    # Configuration
+│   ├── env/                   # Environment Vars
+│   └── models/                # ML Configs
+│
+├── scripts/                   # Utility Scripts
+│   ├── data_processing/       # ETL Scripts
+│   └── deployment/            # CI Helpers
+│
+├── .gitignore
+├── README.md                  # Main Documentation
+├── LICENSE
+├── pyproject.toml            # Build System
+├── requirements.txt          # Python Dependencies
+└── docker-compose.yml        # Local Dev Setup
 ```
 
 
@@ -215,8 +239,7 @@ tree -L 3 SupplyChain-Optimizer  # Visualize structure
 
 **Aditya Kumar Mishra**  
 - GitHub: [@adityakrmishra](https://github.com/adityakrmishra)  
-- Email: [adityakrmishra@example.com](mailto:adityakrmishra@example.com)  
-- LinkedIn: [Your LinkedIn Profile](https://linkedin.com/in/yourprofile) *(optional template)*  
+- LinkedIn: [Your LinkedIn Profile]([https://linkedin.com/in/yourprofile](http://www.linkedin.com/in/aditya-kumarmishra)) *(optional template)*  
 
 **Found a bug?**  
 Open a [GitHub Issue](https://github.com/adityakrmishra/SupplyChain-Optimizer/issues) or contribute via PR!
